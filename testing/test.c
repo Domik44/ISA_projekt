@@ -1,83 +1,56 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
+#include "../flow.h"
 
-#define ARG_LEN 40
-#define DEFAULT_COUNT 1024
-#define DEFAULT_SECONDS 10
-#define DEFAULT_TIMER 60
-#define DEFAULT_COLLECTOR "127.0.0.1:2055"
+t_List list;
 
-typedef struct Args{
-    char fileName[ARG_LEN];
-    char collector[ARG_LEN];
-    int activeTimer;
-    int seconds;
-    int count;
-}t_Args;
+t_FlowHeader *create_header(){ //TODO
+    t_FlowHeader *header = (t_FlowHeader*)malloc(sizeof(t_FlowHeader));  //TODO Osetrit malloc fail!
+    header->version = VERSION;
+    header->engine_id = 0;
+    header->engine_type = 0;
+    header->sampling_interval = 0;
+    header->count = COUNT;
 
-t_Args ctor_Args(){
-   t_Args args;
-   strcpy(args.fileName, "-");
-   strcpy(args.collector, DEFAULT_COLLECTOR);
-   args.count = DEFAULT_COUNT;
-   args.seconds = DEFAULT_SECONDS;
-   args.activeTimer = DEFAULT_TIMER;
-
-   return args;
+    return header;
 }
 
-
-void parse_arguments(int argc, char **argv, t_Args *args){
-    int option;
-
-   while((option = getopt(argc, argv, ":f:c:a:i:m:h")) != -1){ 
-      switch(option){
-         case 'f':
-            strcpy(args->fileName, optarg);
-            break;
-         case 'c':
-            strcpy(args->collector, optarg);
-            break;
-         case 'a':
-            args->activeTimer = atoi(optarg);
-           break;
-         case 'i':
-            args->seconds = atoi(optarg);
-            break;
-         case 'm':
-            args->count = atoi(optarg);
-            break;
-         case 'h':
-            // help_function();
-            break;
-         case ':': // TODO
-            printf("Option \"%c\" needs a value!\n", optopt);
-            exit(-1);
-            break;
-         case '?': // TODO
-            printf("Invalid option \"%c\"!\n", optopt);
-            exit(-1);
-            break;
-      }
-   }
+void delete_header(t_FlowHeader *header){ //TODO
+    free(header);
 }
 
-t_Args args;
+t_Flow *create_flow(char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type){ //TODO
+   t_Flow *flow = (t_Flow*)malloc(sizeof(t_Flow)); //TODO Osetrit malloc fail!
+   flow->header = create_header();
+   strcpy(flow->src_IP, src_ip);
+   strcpy(flow->dst_IP, dst_ip);
+   flow->src_port = src_port;
+   flow->dst_port = dst_port;
+   flow->prot = type;
 
-
-void printfunc(){
-    printf("%s a %s a %i a %i a %i\n", args.fileName, args.collector, args.activeTimer, args.seconds, args.count);
-
+   list_add(&list, flow);
+   return flow;
 }
+
+void delete_flow(t_Flow *flow){ //TODO
+   list_delete(&list, flow);
+   delete_header(flow->header);
+
+   free(flow);
+}
+
 
 int main(int argc, char **argv){
-    int number;
+   list =  ctor_List();
+   t_Flow *flow = create_flow("128.1.1.0", "128.1.1.1", 11111, 123, 17);
+   t_Flow *flow1 = create_flow("128.1.1.111", "128.1.1.2", 11112, 123, 17);
+   t_Flow *flow2 = create_flow("128.1.1.222", "128.1.1.3", 11113, 123, 17);
 
-    args = ctor_Args();
-    parse_arguments(argc, argv, &args);
+   t_Flow *current = list_find(&list ,"128.1.1.111", "128.1.1.2", 11112, 123, 17);
+   if(current){
+      printf("Verze net: %d a src: %s\n", current->header->version, current->src_IP);
+   }
+   delete_flow(flow);
+   delete_flow(flow1);
+   delete_flow(flow2);
 
-    printfunc();
-    return 0;
+   return 0;
 }

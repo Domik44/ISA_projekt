@@ -16,7 +16,7 @@ t_List ctor_List(){
 }
 
 void list_add(t_List *list, t_Flow *flow){ //TODO
-    if(!list->head){
+    if(list->counter == 0){
         list->head = flow;
         list->last = flow;
     }
@@ -47,18 +47,16 @@ void list_delete(t_List *list, t_Flow *flow){ //TODO
             flow->next->previous = flow->previous;
         }
     }
-    delete_header(flow->header);
-    delete_flow(flow);
     list->counter -= 1;
 }
 
 
-t_Flow *list_find(t_List *list, char *src_ip, char *dst_ip, unsigned src_port, unsigned dst_port, int type){ //TODO
+t_Flow *list_find(t_List *list, char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type){ //TODO
     t_Flow *result = NULL;
     t_Flow *current = list->head;
 
     while(current){
-        if(current->prot == type && strcmp(current->src_IP, src_ip) && strcmp(current->dst_IP, dst_ip) && current->src_port == src_port && current->dst_port == dst_port){
+        if(current->prot == type && strcmp(current->src_IP, src_ip) == 0 && strcmp(current->dst_IP, dst_ip) == 0 && current->src_port == src_port && current->dst_port == dst_port){
             result = current;
             break;
         }

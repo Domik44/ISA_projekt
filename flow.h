@@ -26,12 +26,13 @@
 #define FILTER_LEN 30
 #define NUMBER_PACKETS 0
 #define IP_LEN 40
-#define TYPE_IP 10
+
 #define ICMP 1
 #define TCP 6
 #define UDP 17
 
-
+#define VERSION 5
+#define COUNT 1
 
 #define DATE_FORMAT 20
 #define MILISECONDS 6
@@ -55,15 +56,15 @@ typedef struct Args{
  * 
  */
 typedef struct FlowHeader{
-    int version;
-    int count;
+    uint16_t version;
+    uint16_t count;
     char SysUptime[DATE_FORMAT]; // TODO
-    int unix_secs;
-    int unix_nsecs;
-    int flow_sequence;
-    int engine_type; //TODO
-    int engine_id; // TODO
-    int sampling_interval; // TODO
+    uint32_t unix_secs;
+    uint32_t unix_nsecs;
+    uint32_t flow_sequence;
+    uint8_t engine_type; //TODO
+    uint8_t engine_id; // TODO
+    uint16_t sampling_interval; // TODO
 }t_FlowHeader;
 
 
@@ -81,10 +82,10 @@ typedef struct Flow{
     int dOctets;
     char first[DATE_FORMAT];
     char last[DATE_FORMAT];
-    unsigned src_port;
-    unsigned dst_port;
+    uint16_t src_port;
+    uint16_t dst_port;
     int pad1; //TODO
-    int prot;
+    uint8_t prot;
     int tos; // TODO
     int src_as; //TODO
     int dst_as; //TODO
@@ -142,7 +143,7 @@ void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header
  * @param data String containing packet data
  * @param ip_header_len Length of ip header
  */
-void process_tcp(const u_char *data ,int ip_header_len, unsigned *src_port, unsigned *dst_port);
+void process_tcp(const u_char *data ,int ip_header_len, uint16_t *src_port, uint16_t *dst_port);
 
 /**
  * @brief Fucntion gets important information about UDP packet
@@ -150,7 +151,7 @@ void process_tcp(const u_char *data ,int ip_header_len, unsigned *src_port, unsi
  * @param data String containing packet data
  * @param ip_header_len Length of ip header
  */
-void process_udp(const u_char *data, int ip_header_len, unsigned *src_port, unsigned *dst_port);
+void process_udp(const u_char *data, int ip_header_len, uint16_t *src_port, uint16_t *dst_port);
 
 /**
  * @brief 
@@ -165,7 +166,7 @@ t_FlowHeader *create_header();
 
 void delete_header(t_FlowHeader *header);
 
-t_Flow *create_flow(char *src_ip);
+t_Flow *create_flow(char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type);
 
 void delete_flow(t_Flow *flow);
 
@@ -175,4 +176,4 @@ void list_add(t_List *list, t_Flow *flow);
 
 void list_delete(t_List *list, t_Flow *flow);
 
-t_Flow *list_find();
+t_Flow *list_find(t_List *list, char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type);
