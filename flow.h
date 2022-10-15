@@ -19,7 +19,7 @@
 
 #define ARG_LEN 40
 #define DEFAULT_COUNT 1024
-#define DEFAULT_SECONDS 10
+#define DEFAULT_INACTIVE 10
 #define DEFAULT_TIMER 60
 #define DEFAULT_COLLECTOR "127.0.0.1:2055"
 #define FILTER "udp or tcp or icmp"
@@ -35,7 +35,7 @@
 #define COUNT 1
 
 #define DATE_FORMAT 20
-#define MILISECONDS 6
+#define MILISECONDS 7
 #define TIME_ZONE 3
 #define TIME_LEN 50
 
@@ -46,8 +46,8 @@
 typedef struct Args{
     char fileName[ARG_LEN];
     char collector[ARG_LEN];
-    int activeTimer;
-    int seconds;
+    double activeTimer;
+    double inactiveTimer;
     int count;
 }t_Args;
 
@@ -76,27 +76,30 @@ typedef struct Flow{
     char src_IP[IP_LEN];
     char dst_IP[IP_LEN];
     char next_hop[IP_LEN];
-    int input; //TODO
-    int output; //TODO
-    int dPkts;
-    int dOctets;
-    char first[DATE_FORMAT];
-    char last[DATE_FORMAT];
+    uint16_t input; //TODO
+    uint16_t output; //TODO
+    uint32_t dPkts;
+    uint32_t dOctets;
+    char first[TIME_LEN];
+    char last[TIME_LEN];
     uint16_t src_port;
     uint16_t dst_port;
-    int pad1; //TODO
+    uint8_t pad1; //TODO
+    uint8_t tpc_flags; // TODO
     uint8_t prot;
-    int tos; // TODO
-    int src_as; //TODO
-    int dst_as; //TODO
-    int pad2; // TODO
+    uint8_t tos; // TODO
+    uint16_t src_as; //TODO
+    uint16_t dst_as; //TODO
+    uint8_t src_mask; //TODO
+    uint8_t dst_mask; //TODO
+    uint16_t pad2; // TODO
     struct Flow *next;
     struct Flow *previous;
     struct FlowHeader *header;
 }t_Flow;
 
 /**
- * @brief Structure for storing user input arguments
+ * @brief List structure for holding flows
  * 
  */
 typedef struct List{
@@ -104,6 +107,20 @@ typedef struct List{
     t_Flow *last;
     int counter;
 }t_List;
+
+/**
+ * @brief Structure for storing date
+ * 
+ */
+typedef struct Date{
+    char day[DATE_FORMAT];
+    char month[DATE_FORMAT];
+    char year[DATE_FORMAT];
+    char hours[DATE_FORMAT];
+    char minutes[DATE_FORMAT];
+    char seconds[DATE_FORMAT];
+}t_Date;
+
 
 /**
  * @brief Constructor for argument structure
@@ -166,7 +183,7 @@ t_FlowHeader *create_header();
 
 void delete_header(t_FlowHeader *header);
 
-t_Flow *create_flow(char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type);
+t_Flow *create_flow(char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type, char *time, uint32_t octets);
 
 void delete_flow(t_Flow *flow);
 
@@ -177,3 +194,9 @@ void list_add(t_List *list, t_Flow *flow);
 void list_delete(t_List *list, t_Flow *flow);
 
 t_Flow *list_find(t_List *list, char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type);
+
+t_Date split_date(char *given);
+
+double get_seconds(char *str);
+
+double get_difference(t_Date first, t_Date last);

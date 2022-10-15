@@ -11,7 +11,7 @@ t_Args ctor_Args(){
    strcpy(args.fileName, "-");
    strcpy(args.collector, DEFAULT_COLLECTOR);
    args.count = DEFAULT_COUNT;
-   args.seconds = DEFAULT_SECONDS;
+   args.inactiveTimer = DEFAULT_INACTIVE;
    args.activeTimer = DEFAULT_TIMER;
 
    return args;
@@ -45,10 +45,10 @@ void parse_arguments(int argc, char **argv, t_Args *args){
             strcpy(args->collector, optarg);
             break;
          case 'a':
-            args->activeTimer = atoi(optarg);
+            args->activeTimer = get_seconds(optarg); 
            break;
          case 'i':
-            args->seconds = atoi(optarg);
+            args->inactiveTimer = get_seconds(optarg);
             break;
          case 'm':
             args->count = atoi(optarg);

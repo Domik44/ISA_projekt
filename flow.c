@@ -32,15 +32,36 @@ void process_icmp(){
     // Could write any data specific for icmp
 }
 
-void check_timers(); // Tahle funkce na zaklade nove nastaveneho casu zkontroluje, ktere flows je potreba odeslat na kolektor
+void check_timers(char *date){
+    // ziskat den a cas z data
+    t_Flow *current = list.head;
+    t_Date sdate = split_date(date);
+
+    while(current){
+        t_Date first = split_date(current->first);
+        t_Date last = split_date(current->last);
+        double first_diff = get_difference(first, sdate);
+        double last_diff = get_difference(last, sdate);
+        // printf("FD %lf LD %lf \n", first_diff, last_diff);
+        if(first_diff > args.activeTimer || last_diff > args.inactiveTimer){
+            printf("POSILAM \n"); // TODO
+            send_flow();
+        }
+        current = current->next;
+    }
+}
 
 t_FlowHeader *create_header(){ //TODO
     t_FlowHeader *header = (t_FlowHeader*)malloc(sizeof(t_FlowHeader));  //TODO Osetrit malloc fail!
     header->version = VERSION;
-    header->engine_id = 0;
-    header->engine_type = 0;
-    header->sampling_interval = 0;
     header->count = COUNT;
+    strcpy(header->SysUptime, "time"); // TODO
+    header->unix_secs = 0; // TODO
+    header->unix_nsecs = 0; // TODO
+    header->flow_sequence = COUNT; // TODO
+    header->engine_type = 0;
+    header->engine_id = 0;
+    header->sampling_interval = 0;
 
     return header;
 }
@@ -49,16 +70,31 @@ void delete_header(t_FlowHeader *header){ //TODO
     free(header);
 }
 
-t_Flow *create_flow(char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type){ //TODO
+t_Flow *create_flow(char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type, char *time, uint32_t octets){ //TODO
    t_Flow *flow = (t_Flow*)malloc(sizeof(t_Flow)); //TODO Osetrit malloc fail!
    flow->header = create_header();
    flow->next = NULL;
+
    strcpy(flow->src_IP, src_ip);
    strcpy(flow->dst_IP, dst_ip);
+   strcpy(flow->next_hop, "0.0.0.0");
+   flow->input = 0;
+   flow->output = 0;
+   flow->dPkts = 1;
+   flow->dOctets = octets; // TODO
+   strcpy(flow->first, time);
+   strcpy(flow->last, time);
    flow->src_port = src_port;
    flow->dst_port = dst_port;
+   flow->pad1 = 0;
+   flow->tpc_flags = 1; // TODO
    flow->prot = type;
-   flow->dPkts = 1;
+   flow->tos = 1; // TODO
+   flow->src_as = 0;
+   flow->dst_as = 0;
+   flow->src_mask = 0;
+   flow->dst_mask = 0;
+   flow->pad2 = 0;
 
    list_add(&list, flow);
    return flow;
@@ -71,8 +107,14 @@ void delete_flow(t_Flow *flow){ //TODO
    free(flow);
 }
 
-void update_flow(t_Flow *flow){ //TODO
+void update_flow(t_Flow *flow, char *new_last, uint32_t add_octets){ //TODO
     flow->dPkts += 1;
+    flow->dOctets += add_octets;
+    strcpy(flow->last, new_last);
+}
+
+void send_flow(){
+    printf("Sending \n");
 }
 
 void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header, const u_char *data){
@@ -91,27 +133,25 @@ void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header
     }
 
     // Getting timestamp
-    // TODO -> UDELAT ARRIVAL TIME A ODECTY MEZI LAST A FIRST PRO KONTROLU TIMERU!
-    // printf("PACKET: \n\n");
     char miliseconds[MILISECONDS+1];
     char date_format[DATE_FORMAT] = "%F %T.";
-    char time_zone[TIME_ZONE] = "%z";
-    
-    snprintf(miliseconds, MILISECONDS, "%ld", packet_header->ts.tv_usec);
-    // printf("%s  \n", miliseconds);
-    strcat(date_format, miliseconds);
-    // printf("%s  \n", date_format);
-    // strcat(date_format, time_zone);
-    // printf("%s  \n", date_format);
-
     char time[TIME_LEN];
-	size_t zone = strftime(time, sizeof(time), date_format, localtime(&packet_header->ts.tv_sec));
-    // printf("%s  \n", time);
-    
-    // Getting packet length
-    int len = packet_header->len;
 
-    // Determining whether we have IPv4 or IPv6
+    snprintf(miliseconds, MILISECONDS, "%ld", packet_header->ts.tv_usec);
+    strcat(date_format, miliseconds);
+	size_t zone = strftime(time, sizeof(time), date_format, localtime(&packet_header->ts.tv_sec));
+
+    // printf("%s  \n", time);
+
+    if(list.head){
+        check_timers(time);
+    }
+
+    // Getting packet length
+    uint32_t len = packet_header->len; // TODO
+    // printf("LEN = %d \n", len);
+
+    // TODO -> zjistit jestli resit nejak i ipv6 nebo ne
     uint8_t protocol_type;
     int ip_header_len;
     char ip_src[IP_LEN];
@@ -123,8 +163,6 @@ void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header
     ip_header_len = ipv4_header->ip_hl*4;
     strcpy(ip_src, inet_ntoa((struct in_addr)ipv4_header->ip_src));
     strcpy(ip_dst, inet_ntoa((struct in_addr)ipv4_header->ip_dst));
-
-   //  Determining which protocol we have and printing his info
 
     uint16_t src_port = 0;
     uint16_t dst_port = 0;
@@ -145,10 +183,14 @@ void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header
 
     t_Flow *flow = list_find(&list, ip_src, ip_dst, src_port, dst_port, protocol_type);
     if(!flow){
-        flow = create_flow(ip_src, ip_dst, src_port, dst_port, protocol_type);
+        if(list.counter >= args.count){
+            // TODO -> tady budeme muset najit nejstarsi flow
+            send_flow();
+        }
+        flow = create_flow(ip_src, ip_dst, src_port, dst_port, protocol_type, time, len); // TODO
     }
     else{
-        update_flow(flow);
+        update_flow(flow, time, len); // TODO
     }
 }
 
@@ -157,7 +199,7 @@ int main(int argc, char **argv){
    args = ctor_Args();
    list = ctor_List();
    parse_arguments(argc, argv, &args);
-   printf("%s a %s a %i a %i a %i\n", args.fileName, args.collector, args.activeTimer, args.seconds, args.count);
+   printf("%s a %s a %lf a %lf a %i\n", args.fileName, args.collector, args.activeTimer, args.inactiveTimer, args.count);
 
    char error_buffer[PCAP_ERRBUF_SIZE];
 
@@ -175,7 +217,7 @@ int main(int argc, char **argv){
         fprintf(stderr, "Error! Could not compile filter! \nFilter: \n\t %s \nError: \n\t%s \n", filter, pcap_geterr(sniffer));
         exit(-1);
     }
-    
+
     // Applying filter
     if (pcap_setfilter(sniffer, &fp) == -1) {
         fprintf(stderr, "Error! Could not set filter! \nFilter: \n\t %s \nError: \n\t%s \n", filter, pcap_geterr(sniffer));
@@ -185,16 +227,16 @@ int main(int argc, char **argv){
     // Waiting for packets in loop
     pcap_loop(sniffer, NUMBER_PACKETS, sniffer_callback, NULL);
 
-    // t_Flow *current = list.head;
-    // t_Flow *tmp;
-    // while (current)
-    // {
-    //     printf("FLOW: \n %s a %d a %d \n", current->src_IP, current->src_port, current->dPkts);
-    //     tmp = current->next;
-    //     delete_flow(current);
-    //     current = tmp;
-    // }
-    
+    t_Flow *current = list.head; // TODO -> smazat
+    t_Flow *tmp;
+    while (current)
+    {
+        printf("FLOW: \n sip: %s dip: %s sp: %d dp: %d pr: %d pp: %d po: %d f: %s l: %s \n", current->src_IP, current->dst_IP, current->src_port, current->dst_port, current->prot, current->dPkts, current->dOctets, current->first, current->last);
+        tmp = current->next;
+        delete_flow(current);
+        current = tmp;
+    }
+
 
    return 0;
 }
