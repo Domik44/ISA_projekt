@@ -17,6 +17,7 @@ t_Date current_time;
 
 // TODO -> CASY PRI TESTOVANI NESEDI JSOU TAM MIRNE ROZDILY (Mozna je to zaokrouhlenim?)
 // TODO -> TCP_FLAGS
+// TODO -> asi by to potom chtelo predelat aby vypocty casu byly podle sysuptimu misto vypoctu z dat
 
 void process_tcp(const u_char *data, int ip_header_len, uint16_t *src_port, uint16_t *dst_port){
     struct tcphdr *tcp_header = (struct tcphdr *)(data + ip_header_len + sizeof(struct ether_header));
@@ -46,7 +47,6 @@ void check_timers(char *date){
         t_Date last = split_date(current->last);
         double first_diff = get_difference(&first, &sdate);
         double last_diff = get_difference(&last, &sdate);
-        // printf("FD %lf LD %lf \n", first_diff, last_diff);
         if(first_diff > args.activeTimer || last_diff > args.inactiveTimer){
             printf("POSILAM \n"); // TODO
             send_flow(&args, current, &oldest_time, &current_time);
@@ -148,8 +148,6 @@ void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header
     // TODO -> zjistit jestli resit nejak i ipv6 nebo ne
     uint8_t protocol_type;
     int ip_header_len;
-    // char ip_src[IP_LEN];
-    // char ip_dst[IP_LEN];
     uint32_t ip_src;
     uint32_t ip_dst;
 
@@ -163,7 +161,6 @@ void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header
     uint8_t tos = ipv4_header->ip_tos;
     // Getting packet length
     uint32_t len = htons(ipv4_header->ip_len); // TODO -> pozjistovat jak vytahnout velikost ktera je pozadovana
-    // printf("LEN = %d \n", len);
 
     uint16_t src_port = 0;
     uint16_t dst_port = 0;
@@ -230,11 +227,11 @@ int main(int argc, char **argv){
     // Waiting for packets in loop
     pcap_loop(sniffer, NUMBER_PACKETS, sniffer_callback, NULL);
 
-    t_Flow *current = list.head; // TODO -> smazat
+    t_Flow *current = list.head; // TODO
     t_Flow *tmp;
     while (current)
     {
-        printf("FLOW: \n sip: %d dip: %d sp: %d dp: %d pr: %d pp: %d po: %d f: %s l: %s \n", current->src_IP, current->dst_IP, current->src_port, current->dst_port, current->prot, current->dPkts, current->dOctets, current->first, current->last);
+        // printf("FLOW: \n sip: %d dip: %d sp: %d dp: %d pr: %d pp: %d po: %d f: %s l: %s \n", current->src_IP, current->dst_IP, current->src_port, current->dst_port, current->prot, current->dPkts, current->dOctets, current->first, current->last);
         tmp = current->next;
         send_flow(&args, current, &oldest_time, &current_time);
         current = tmp;

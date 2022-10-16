@@ -15,7 +15,7 @@ t_List ctor_List(){
     return list;
 }
 
-void list_add(t_List *list, t_Flow *flow){ //TODO
+void list_add(t_List *list, t_Flow *flow){
     if(list->counter == 0){
         list->head = flow;
         list->last = flow;
@@ -28,7 +28,7 @@ void list_add(t_List *list, t_Flow *flow){ //TODO
     list->counter += 1;
 }
 
-void list_delete(t_List *list, t_Flow *flow){ //TODO
+void list_delete(t_List *list, t_Flow *flow){
     if(list->counter == 1){
         list->head = NULL;
         list->last = NULL;
@@ -51,7 +51,7 @@ void list_delete(t_List *list, t_Flow *flow){ //TODO
 }
 
 
-t_Flow *list_find(t_List *list, uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type){ //TODO
+t_Flow *list_find(t_List *list, uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type){
     t_Flow *result = NULL;
     t_Flow *current = list->head;
 
