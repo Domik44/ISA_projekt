@@ -9,7 +9,12 @@
 t_Args ctor_Args(){
    t_Args args;
    strcpy(args.fileName, "-");
-   strcpy(args.collector, DEFAULT_COLLECTOR);
+   memset(&args.collector,0,sizeof(args.collector)); // erase the server structure
+   args.collector.sin_family = AF_INET;   
+   if ((args.servent = gethostbyname(DEFAULT_COLLECTOR_IP)) == NULL) // check the first parameter
+      errx(1,"gethostbyname() failed\n");
+   memcpy(&args.collector.sin_addr,args.servent->h_addr,args.servent->h_length);
+   args.collector.sin_port = htons(DEFAULT_COLLECTOR_PORT);
    args.count = DEFAULT_COUNT;
    args.inactiveTimer = DEFAULT_INACTIVE;
    args.activeTimer = DEFAULT_TIMER;
@@ -33,8 +38,30 @@ void help_function(){
 }
 
 
+void split_arg(char *arg, char *ip, char *port){
+   int len =  strlen(arg);
+   int cnt = 0, j = 0;
+   for(int i = 0; i < len; i++){
+      if(arg[i] == ':'){
+         cnt++;
+         ip[i] = '\0';
+         continue;
+      }
+      if(cnt == 0){
+         ip[i] = arg[i];
+      }
+      else{
+         port[j] = arg[i];
+         j++;
+      }
+   }
+   port[j] = '\0';
+}
+
+
 void parse_arguments(int argc, char **argv, t_Args *args){
     int option;
+    char ip[IP_LEN], port[PORT_LEN];
 
    while((option = getopt(argc, argv, ":f:c:a:i:m:h")) != -1){ 
       switch(option){
@@ -42,7 +69,11 @@ void parse_arguments(int argc, char **argv, t_Args *args){
             strcpy(args->fileName, optarg);
             break;
          case 'c':
-            strcpy(args->collector, optarg);
+            split_arg(optarg, ip, port);
+            if ((args->servent = gethostbyname(ip)) == NULL) // check the first parameter
+               errx(1,"gethostbyname() failed\n");
+            memcpy(&args->collector.sin_addr,args->servent->h_addr,args->servent->h_length);
+            args->collector.sin_port = htons(atoi(port));
             break;
          case 'a':
             args->activeTimer = get_seconds(optarg); 
@@ -57,12 +88,10 @@ void parse_arguments(int argc, char **argv, t_Args *args){
             help_function();
             break;
          case ':': // TODO
-            printf("Option \"%c\" needs a value!\n", optopt);
-            exit(-1);
+            errx(1,"Option \"%c\" needs a value!\n", optopt);
             break;
          case '?': // TODO
-            printf("Invalid option \"%c\"!\n", optopt);
-            exit(-1);
+            errx(1,"Invalid option \"%c\"!\n", optopt);
             break;
       }
    }

@@ -69,16 +69,15 @@ double get_seconds(char *str){
    return strtod(str, &ptr);
 }
 
-double get_difference(t_Date first, t_Date last){
+double get_difference(t_Date *first, t_Date *last){
    double difference = 0.0;
-   char *ptr;
 
-   int day_first = atoi(first.day);
-   int day_last = atoi(last.day);
+   int day_first = atoi(first->day);
+   int day_last = atoi(last->day);
    int day_dif = (day_last - day_first)*24*3600;
 
-   double first_sec = get_seconds(first.hours)*3600.0 + get_seconds(first.minutes)*60.0 + get_seconds(first.seconds);
-   double last_sec = get_seconds(last.hours)*3600.0 + get_seconds(last.minutes)*60.0 + get_seconds(last.seconds) + (double)day_dif;
+   double first_sec = get_seconds(first->hours)*3600.0 + get_seconds(first->minutes)*60.0 + get_seconds(first->seconds);
+   double last_sec = get_seconds(last->hours)*3600.0 + get_seconds(last->minutes)*60.0 + get_seconds(last->seconds) + (double)day_dif;
    difference = last_sec - first_sec;
    
    return difference;

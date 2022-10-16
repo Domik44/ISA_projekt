@@ -117,13 +117,98 @@ double get_difference(t_Date first, t_Date last){
 }
 
 
+void split_arg(char *arg, char *ip, char *port){
+   int len =  strlen(arg);
+   int cnt = 0, j = 0;
+   for(int i = 0; i < len; i++){
+      if(arg[i] == ':'){
+         cnt++;
+         ip[i] = '\0';
+         continue;
+      }
+      if(cnt == 0){
+         ip[i] = arg[i];
+      }
+      else{
+         port[j] = arg[i];
+         j++;
+      }
+   }
+   port[j] = '\0';
+}
+
 int main(int argc, char **argv){
+//    int sock;                        // socket descriptor
+//   int msg_size, i;
+//   struct sockaddr_in server, from; // address structures of the server and the client
+//   struct hostent *servent;         // network host entry required by gethostbyname()
+//   socklen_t len, fromlen;        
+//   char buffer[1024];            
+
+//   if (argc != 3)                   // two parameters required
+//     errx(1,"Usage: %s <address> <port>",argv[0]);
+  
+//   memset(&server,0,sizeof(server)); // erase the server structure
+//   server.sin_family = AF_INET;                   
+
+//   // make DNS resolution of the first parameter using gethostbyname()
+//   if ((servent = gethostbyname(argv[1])) == NULL) // check the first parameter
+//     errx(1,"gethostbyname() failed\n");
+
+//   // copy the first parameter to the server.sin_addr structure
+//   memcpy(&server.sin_addr,servent->h_addr,servent->h_length); 
+
+//   server.sin_port = htons(atoi(argv[2]));        // server port (network byte order)
    
-   t_Date date1 = split_date("01-01-2002 23:57:30.111111");
-   t_Date date2 = split_date("02-01-2002 00:1:35.111115");
+//   if ((sock = socket(AF_INET , SOCK_DGRAM , 0)) == -1)   //create a client socket
+//     err(1,"socket() failed\n");
+  
+//   printf("* Server socket created\n");
+     
+//   len = sizeof(server);
+//   fromlen = sizeof(from);
 
-   double difference = get_difference(date1, date2);
+//   printf("* Creating a connected UDP socket using connect()\n");                
+//   // create a connected UDP socket
+//   if (connect(sock, (struct sockaddr *)&server, sizeof(server))  == -1)
+//     err(1, "connect() failed");
 
+//   //send data to the server
+//   while((msg_size=read(STDIN_FILENO,buffer,1024)) > 0) 
+//       // read input data from STDIN (console) until end-of-line (Enter) is pressed
+//       // when end-of-file (CTRL-D) is received, n == 0
+//   { 
+//     i = send(sock,buffer,msg_size,0);     // send data to the server
+//     if (i == -1)                   // check if data was sent correctly
+//       err(1,"send() failed");
+//     else if (i != msg_size)
+//       err(1,"send(): buffer written partially");
 
-   return 0;
+//     // obtain the local IP address and port using getsockname()
+//     if (getsockname(sock,(struct sockaddr *) &from, &len) == -1)
+//       err(1,"getsockname() failed");
+
+//     printf("* Data sent from %s, port %d (%d) to %s, port %d (%d)\n",inet_ntoa(from.sin_addr), ntohs(from.sin_port), from.sin_port, inet_ntoa(server.sin_addr),ntohs(server.sin_port), server.sin_port);
+    
+//     // read the answer from the server 
+//     if ((i = recv(sock,buffer, 1024,0)) == -1)   
+//       err(1,"recv() failed");
+//     else if (i > 0){
+//       // obtain the remote IP adddress and port from the server (cf. recfrom())
+//       if (getpeername(sock, (struct sockaddr *)&from, &fromlen) != 0) 
+// 	      err(1,"getpeername() failed\n");
+
+//       printf("* UDP packet received from %s, port %d\n",inet_ntoa(from.sin_addr),ntohs(from.sin_port));
+//       printf("%.*s",i,buffer);                   // print the answer
+//     }
+//   } 
+//   // reading data until end-of-file (CTRL-D)
+
+//   if (msg_size == -1)
+//     err(1,"reading failed");
+//   close(sock);
+//   printf("* Closing the client socket ...\n");
+//   return 0;
+int i = PACKET_SIZE;
+printf("%d \n", i);
 }

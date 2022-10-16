@@ -51,12 +51,12 @@ void list_delete(t_List *list, t_Flow *flow){ //TODO
 }
 
 
-t_Flow *list_find(t_List *list, char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type){ //TODO
+t_Flow *list_find(t_List *list, uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type){ //TODO
     t_Flow *result = NULL;
     t_Flow *current = list->head;
 
     while(current){
-        if(current->prot == type && strcmp(current->src_IP, src_ip) == 0 && strcmp(current->dst_IP, dst_ip) == 0 && current->src_port == src_port && current->dst_port == dst_port){
+        if(current->prot == type && current->src_IP == src_ip && current->dst_IP == dst_ip && current->src_port == src_port && current->dst_port == dst_port){
             result = current;
             break;
         }

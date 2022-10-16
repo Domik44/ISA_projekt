@@ -17,15 +17,19 @@
 
 #include <time.h>
 
+#include<err.h>
+
 #define ARG_LEN 40
 #define DEFAULT_COUNT 1024
 #define DEFAULT_INACTIVE 10
 #define DEFAULT_TIMER 60
-#define DEFAULT_COLLECTOR "127.0.0.1:2055"
+#define DEFAULT_COLLECTOR_IP "127.0.0.1"
+#define DEFAULT_COLLECTOR_PORT 2055
 #define FILTER "udp or tcp or icmp"
 #define FILTER_LEN 30
 #define NUMBER_PACKETS 0
 #define IP_LEN 40
+#define PORT_LEN 6
 
 #define ICMP 1
 #define TCP 6
@@ -39,16 +43,22 @@
 #define TIME_ZONE 3
 #define TIME_LEN 50
 
+#define HEADER_SIZE 24
+#define FLOW_SIZE 48
+#define PACKET_SIZE HEADER_SIZE + FLOW_SIZE // -> 72 (We are sending one flow per packet)
+
 /**
  * @brief Structure for storing user input arguments
  * 
  */
 typedef struct Args{
     char fileName[ARG_LEN];
-    char collector[ARG_LEN];
+    struct sockaddr_in collector;
     double activeTimer;
     double inactiveTimer;
     int count;
+    struct hostent *servent;
+    int sock;
 }t_Args;
 
 /**
@@ -58,7 +68,7 @@ typedef struct Args{
 typedef struct FlowHeader{
     uint16_t version;
     uint16_t count;
-    char SysUptime[DATE_FORMAT]; // TODO
+    uint32_t SysUptime; // TODO
     uint32_t unix_secs;
     uint32_t unix_nsecs;
     uint32_t flow_sequence;
@@ -73,9 +83,9 @@ typedef struct FlowHeader{
  * 
  */
 typedef struct Flow{
-    char src_IP[IP_LEN];
-    char dst_IP[IP_LEN];
-    char next_hop[IP_LEN];
+    uint32_t src_IP;
+    uint32_t dst_IP;
+    uint32_t next_hop;
     uint16_t input; //TODO
     uint16_t output; //TODO
     uint32_t dPkts;
@@ -183,7 +193,7 @@ t_FlowHeader *create_header();
 
 void delete_header(t_FlowHeader *header);
 
-t_Flow *create_flow(char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type, char *time, uint32_t octets);
+t_Flow *create_flow(uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type, char *time, uint32_t octets);
 
 void delete_flow(t_Flow *flow);
 
@@ -193,10 +203,18 @@ void list_add(t_List *list, t_Flow *flow);
 
 void list_delete(t_List *list, t_Flow *flow);
 
-t_Flow *list_find(t_List *list, char *src_ip, char *dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type);
+t_Flow *list_find(t_List *list, uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type);
 
 t_Date split_date(char *given);
 
 double get_seconds(char *str);
 
-double get_difference(t_Date first, t_Date last);
+double get_difference(t_Date *first, t_Date *last);
+
+void send_flow(t_Args *args, t_Flow *flow, t_Date *oldest, t_Date *current);
+
+void create_client_sock(t_Args *args);
+
+void connect_to_sock(t_Args *args);
+
+void close_sock(t_Args *args);
