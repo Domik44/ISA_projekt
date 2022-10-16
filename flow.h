@@ -39,7 +39,7 @@
 #define COUNT 1
 
 #define DATE_FORMAT 20
-#define MILISECONDS_LEN 3 // TODO Zmeneno aby to ukrajovalo a nezaokrouhluje to !!
+#define MILISECONDS_LEN 7 // TODO Zmeneno aby to ukrajovalo a nezaokrouhluje to !!
 #define MILISECONDS 1000
 #define TIME_ZONE 3
 #define TIME_LEN 50

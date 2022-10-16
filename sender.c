@@ -78,6 +78,8 @@ void send_flow(t_Args *args, t_Flow *flow, t_Date *oldest, t_Date *current){
 
     int i = send(args->sock,packet,PACKET_SIZE,0); // TODO -> posledni polozka flags
 
+    printf("TU: %lf a TADY: %lf \n", MILISECONDS*get_difference(oldest, &first), MILISECONDS*get_difference(oldest, &last));
+
     delete_flow(flow);
     flows_exported++;
 }
