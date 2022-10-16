@@ -39,7 +39,8 @@
 #define COUNT 1
 
 #define DATE_FORMAT 20
-#define MILISECONDS 7
+#define MILISECONDS_LEN 3 // TODO Zmeneno aby to ukrajovalo a nezaokrouhluje to !!
+#define MILISECONDS 1000
 #define TIME_ZONE 3
 #define TIME_LEN 50
 
@@ -189,11 +190,11 @@ void process_icmp();
 // Tohle bude funkce na kontrolovani timeru flow (ktere odeslat)
 void check_times();
 
-t_FlowHeader *create_header();
+t_FlowHeader *create_header(struct timeval *secs);
 
 void delete_header(t_FlowHeader *header);
 
-t_Flow *create_flow(uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type, char *time, uint32_t octets);
+t_Flow *create_flow(uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type, char *time, uint32_t octets, struct timeval *secs, uint8_t tos);
 
 void delete_flow(t_Flow *flow);
 

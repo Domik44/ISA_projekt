@@ -15,6 +15,9 @@ t_Date current_time;
 
 // Packet handling
 
+// TODO -> CASY PRI TESTOVANI NESEDI JSOU TAM MIRNE ROZDILY (Mozna je to zaokrouhlenim?)
+// TODO -> TCP_FLAGS
+
 void process_tcp(const u_char *data, int ip_header_len, uint16_t *src_port, uint16_t *dst_port){
     struct tcphdr *tcp_header = (struct tcphdr *)(data + ip_header_len + sizeof(struct ether_header));
     *src_port = tcp_header->source; // TODO -> odstraneno nthos protoze neni potreba ho delat?
@@ -52,13 +55,12 @@ void check_timers(char *date){
     }
 }
 
-t_FlowHeader *create_header(){ //TODO
+t_FlowHeader *create_header(struct timeval *secs){ //TODO
     t_FlowHeader *header = (t_FlowHeader*)malloc(sizeof(t_FlowHeader));  //TODO Osetrit malloc fail!
     header->version = VERSION;
     header->count = COUNT;
-    // strcpy(header->SysUptime, "time"); // TODO -> nastavuje se v send_flow pomoci current_t a oldest_t
-    header->unix_secs = 0; // TODO
-    header->unix_nsecs = 0; // TODO
+    header->unix_secs = secs->tv_sec; // TODO
+    header->unix_nsecs = secs->tv_usec*MILISECONDS; // TODO
     header->flow_sequence = COUNT; // TODO
     header->engine_type = 0;
     header->engine_id = 0;
@@ -71,14 +73,11 @@ void delete_header(t_FlowHeader *header){ //TODO
     free(header);
 }
 
-t_Flow *create_flow(uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type, char *time, uint32_t octets){ //TODO
+t_Flow *create_flow(uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type, char *time, uint32_t octets, struct timeval *secs, uint8_t tos){ //TODO
     t_Flow *flow = (t_Flow*)malloc(sizeof(t_Flow)); //TODO Osetrit malloc fail!
-    flow->header = create_header();
+    flow->header = create_header(secs);
     flow->next = NULL;
 
-//    strcpy(flow->src_IP, src_ip);
-//    strcpy(flow->dst_IP, dst_ip);
-//    strcpy(flow->next_hop, "0.0.0.0");
     flow->src_IP = src_ip;
     flow->dst_IP = dst_ip;
     flow->next_hop = 0;
@@ -91,9 +90,9 @@ t_Flow *create_flow(uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_
     flow->src_port = src_port;
     flow->dst_port = dst_port;
     flow->pad1 = 0;
-    flow->tpc_flags = 1; // TODO
+    flow->tpc_flags = 0; // TODO
     flow->prot = type;
-    flow->tos = 1; // TODO
+    flow->tos = tos; // TODO
     flow->src_as = 0;
     flow->dst_as = 0;
     flow->src_mask = 0;
@@ -118,14 +117,6 @@ void update_flow(t_Flow *flow, char *new_last, uint32_t add_octets){ //TODO
 }
 
 void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header, const u_char *data){
-    // Jaky bude tady prubeh
-    // Kontrola jestli mame IP header
-    // Pokud ano tak ziskame cas z paketu a nastavime ho jako aktualni
-    // Zkontrolujeme pomoci odectu jake flows je potreba odeslat na kolektor a odesleme je (jeden po druhem spolecne s jejich headry)
-    // Podivame se jestli uz existuje flow do ktere bychom mohli paket pridat
-    // Pokud ano, tak aktualizujeme data, ktere flow drzi
-    // Pokud ne, tak vytvorime flow
-
     // Ethernet header
     const struct ether_header *ethernet = (struct ether_header *)data;
     if(ntohs(ethernet->ether_type) != ETHERTYPE_IP){
@@ -136,8 +127,9 @@ void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header
     char miliseconds[MILISECONDS+1];
     char date_format[DATE_FORMAT] = "%F %T.";
     char time[TIME_LEN];
+    struct timeval secs = packet_header->ts;
 
-    snprintf(miliseconds, MILISECONDS, "%ld", packet_header->ts.tv_usec);
+    snprintf(miliseconds, MILISECONDS, "%ld", secs.tv_usec);
     strcat(date_format, miliseconds);
 	strftime(time, sizeof(time), date_format, localtime(&packet_header->ts.tv_sec));
 
@@ -152,10 +144,6 @@ void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header
     if(list.head){
         check_timers(time);
     }
-
-    // Getting packet length
-    uint32_t len = packet_header->len; // TODO -> pozjistovat jak vytahnout velikost ktera je pozadovana
-    // printf("LEN = %d \n", len);
 
     // TODO -> zjistit jestli resit nejak i ipv6 nebo ne
     uint8_t protocol_type;
@@ -172,6 +160,10 @@ void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header
     ip_header_len = ipv4_header->ip_hl*4;
     ip_src = ipv4_header->ip_src.s_addr;
     ip_dst = ipv4_header->ip_dst.s_addr;
+    uint8_t tos = ipv4_header->ip_tos;
+    // Getting packet length
+    uint32_t len = htons(ipv4_header->ip_len); // TODO -> pozjistovat jak vytahnout velikost ktera je pozadovana
+    // printf("LEN = %d \n", len);
 
     uint16_t src_port = 0;
     uint16_t dst_port = 0;
@@ -195,7 +187,7 @@ void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header
         if(list.counter >= args.count){ // Max of flows being in list was reached
             send_flow(&args, list.head, &oldest_time, &current_time); // Sending oldest_time flow
         }
-        flow = create_flow(ip_src, ip_dst, src_port, dst_port, protocol_type, time, len); // TODO
+        flow = create_flow(ip_src, ip_dst, src_port, dst_port, protocol_type, time, len, &secs, tos); // TODO
     }
     else{ // Flow exists so we update it 
         update_flow(flow, time, len); // TODO

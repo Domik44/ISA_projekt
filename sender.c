@@ -42,13 +42,15 @@ void send_flow(t_Args *args, t_Flow *flow, t_Date *oldest, t_Date *current){
     static uint32_t flows_exported = 0;
     uint8_t packet[PACKET_SIZE];
     t_Pkt *pkt = (t_Pkt *)packet;
+    t_Date first = split_date(flow->first);
+    t_Date last = split_date(flow->last);
 
     // HEADER
     pkt->version = htons(VERSION);
     pkt->count = htons(1);
-    pkt->SysUpTime = htonl(get_difference(oldest, current));
-    // pkt->unix_secs;
-    // pkt->unix_nsecs;
+    pkt->SysUpTime = htonl(MILISECONDS*get_difference(oldest, current));
+    pkt->unix_secs = htonl(flow->header->unix_secs);
+    pkt->unix_nsecs = htonl(flow->header->unix_nsecs);
     pkt->flow_seq = htonl(flows_exported);
     pkt->engine_type = 0;
     pkt->engine_id = 0;
@@ -61,20 +63,22 @@ void send_flow(t_Args *args, t_Flow *flow, t_Date *oldest, t_Date *current){
     pkt->output = 0;
     pkt->dPkts = htonl(flow->dPkts);
     pkt->dOcts = htonl(flow->dOctets); // TODO -> doctets nejsou spravne reseny!
-    // pkt->First = 
-    // pkt->Last = 
+    pkt->First = htonl(MILISECONDS*get_difference(oldest, &first));
+    pkt->Last = htonl(MILISECONDS*get_difference(oldest, &last));
     pkt->src_port = flow->src_port;
     pkt->dst_port = flow->dst_port;
     pkt->pad1 = 0;
     pkt->tcp_flags = flow->tpc_flags; // TODO 
-    pkt->prot = flow->prot; // TODO -> mozna bude potreba otocit (nemelo by, ale dunno)
-    pkt->tos = flow->tos; // TODO
+    pkt->prot = flow->prot; // TODO -> mozna bude potreba otocit (nemelo by asi, ale dunno)
+    pkt->tos = flow->tos;
     pkt->src_as = 0;
     pkt->dst_as = 0;
     pkt->src_mask = 0;
     pkt->dst_mask = 0;
     pkt->pad2 = 0;
-    // int i = send(args->sock,packet,PACKET_SIZE,0); // TODO -> posledni polozka flags
+
+    // printf("FIRST: %lf LAST: %lf HDR: %lf \n", MILISECONDS*get_difference(oldest, &first), MILISECONDS*get_difference(oldest, &last), MILISECONDS*get_difference(oldest, current));
+    int i = send(args->sock,packet,PACKET_SIZE,0); // TODO -> posledni polozka flags
 
     delete_flow(flow);
     flows_exported++;
