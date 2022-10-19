@@ -16,8 +16,8 @@ t_Args ctor_Args(){
    memcpy(&args.collector.sin_addr,args.servent->h_addr,args.servent->h_length);
    args.collector.sin_port = htons(DEFAULT_COLLECTOR_PORT);
    args.count = DEFAULT_COUNT;
-   args.inactiveTimer = DEFAULT_INACTIVE;
-   args.activeTimer = DEFAULT_TIMER;
+   args.inactiveTimer = DEFAULT_INACTIVE*MIKROSECONDS;
+   args.activeTimer = DEFAULT_TIMER*MIKROSECONDS;
 
    return args;
 }
@@ -73,13 +73,14 @@ void parse_arguments(int argc, char **argv, t_Args *args){
             if ((args->servent = gethostbyname(ip)) == NULL) // check the first parameter
                errx(1,"gethostbyname() failed\n");
             memcpy(&args->collector.sin_addr,args->servent->h_addr,args->servent->h_length);
-            args->collector.sin_port = htons(atoi(port));
+            if(port[0] != '\0')
+               args->collector.sin_port = htons(atoi(port));
             break;
          case 'a':
-            args->activeTimer = get_seconds(optarg); 
+            args->activeTimer = atoi(optarg)*MIKROSECONDS; 
            break;
          case 'i':
-            args->inactiveTimer = get_seconds(optarg);
+            args->inactiveTimer = atoi(optarg)*MIKROSECONDS;
             break;
          case 'm':
             args->count = atoi(optarg);

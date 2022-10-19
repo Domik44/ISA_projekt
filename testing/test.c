@@ -38,104 +38,104 @@
 // }
 
 
-t_Date split_date(char *given){
-    t_Date result;
-   int len = strlen(given);
-   int space_cnt = 0;
-   int date_cnt = 0;
-   int time_cnt = 0;
-   int j = 0;
+// t_Date split_date(char *given){
+//     t_Date result;
+//    int len = strlen(given);
+//    int space_cnt = 0;
+//    int date_cnt = 0;
+//    int time_cnt = 0;
+//    int j = 0;
 
-   for(int i = 0; i < len; i++){
-      if(given[i] == ' '){
-         space_cnt++;
-         result.year[j] = '\0';
-         j = 0;
-         continue;
-      }
-      if(given[i] == '-'){
-         date_cnt++;
-         if(date_cnt == 1)
-            result.day[j] = '\0';
-         else if(date_cnt == 2)
-            result.month[j] = '\0';
-         j = 0;
-         continue;
-      }
-      if(given[i] == ':'){
-         time_cnt++;
-         if(time_cnt == 1)
-            result.hours[j] = '\0';
-         else if(date_cnt == 2)
-            result.minutes[j] = '\0';
-         j = 0;
-         continue;
-      }
-      if(space_cnt == 0){
-         if(date_cnt == 0)
-            result.day[j] = given[i];
-         else if(date_cnt == 1)
-            result.month[j] = given[i];
-         else
-            result.year[j] = given[i];
-         j++;
-      }
-      else{
-         if(time_cnt == 0)
-            result.hours[j] = given[i];
-         else if(time_cnt == 1)
-            result.minutes[j] = given[i];
-         else
-            result.seconds[j] = given[i];
-         j++;
-      }
-   }
-   result.seconds[j] = '\0';
+//    for(int i = 0; i < len; i++){
+//       if(given[i] == ' '){
+//          space_cnt++;
+//          result.year[j] = '\0';
+//          j = 0;
+//          continue;
+//       }
+//       if(given[i] == '-'){
+//          date_cnt++;
+//          if(date_cnt == 1)
+//             result.day[j] = '\0';
+//          else if(date_cnt == 2)
+//             result.month[j] = '\0';
+//          j = 0;
+//          continue;
+//       }
+//       if(given[i] == ':'){
+//          time_cnt++;
+//          if(time_cnt == 1)
+//             result.hours[j] = '\0';
+//          else if(date_cnt == 2)
+//             result.minutes[j] = '\0';
+//          j = 0;
+//          continue;
+//       }
+//       if(space_cnt == 0){
+//          if(date_cnt == 0)
+//             result.day[j] = given[i];
+//          else if(date_cnt == 1)
+//             result.month[j] = given[i];
+//          else
+//             result.year[j] = given[i];
+//          j++;
+//       }
+//       else{
+//          if(time_cnt == 0)
+//             result.hours[j] = given[i];
+//          else if(time_cnt == 1)
+//             result.minutes[j] = given[i];
+//          else
+//             result.seconds[j] = given[i];
+//          j++;
+//       }
+//    }
+//    result.seconds[j] = '\0';
 
-    return result;
-}
+//     return result;
+// }
 
-double get_seconds(char *str){
-   char *ptr;
+// double get_seconds(char *str){
+//    char *ptr;
 
-   return strtod(str, &ptr);
-}
+//    return strtod(str, &ptr);
+// }
 
-double get_difference(t_Date first, t_Date last){
-   double difference = 0.0;
-   char *ptr;
+// double get_difference(t_Date first, t_Date last){
+//    double difference = 0.0;
+//    char *ptr;
 
-   int day_first = atoi(first.day);
-   int day_last = atoi(last.day);
-   int day_dif = (day_last - day_first)*24*3600;
+//    int day_first = atoi(first.day);
+//    int day_last = atoi(last.day);
+//    int day_dif = (day_last - day_first)*24*3600;
 
-   double first_sec = get_seconds(first.hours)*3600.0 + get_seconds(first.minutes)*60.0 + get_seconds(first.seconds);
-   double last_sec = get_seconds(last.hours)*3600.0 + get_seconds(last.minutes)*60.0 + get_seconds(last.seconds) + (double)day_dif;
-   difference = last_sec - first_sec;
+//    double first_sec = get_seconds(first.hours)*3600.0 + get_seconds(first.minutes)*60.0 + get_seconds(first.seconds);
+//    double last_sec = get_seconds(last.hours)*3600.0 + get_seconds(last.minutes)*60.0 + get_seconds(last.seconds) + (double)day_dif;
+//    difference = last_sec - first_sec;
    
-   return difference;
-}
+//    return difference;
+// }
 
 
-void split_arg(char *arg, char *ip, char *port){
-   int len =  strlen(arg);
-   int cnt = 0, j = 0;
-   for(int i = 0; i < len; i++){
-      if(arg[i] == ':'){
-         cnt++;
-         ip[i] = '\0';
-         continue;
-      }
-      if(cnt == 0){
-         ip[i] = arg[i];
-      }
-      else{
-         port[j] = arg[i];
-         j++;
-      }
-   }
-   port[j] = '\0';
-}
+// void split_arg(char *arg, char *ip, char *port){
+//    int len =  strlen(arg);
+//    int cnt = 0, j = 0;
+//    for(int i = 0; i < len; i++){
+//       if(arg[i] == ':'){
+//          cnt++;
+//          ip[i] = '\0';
+//          continue;
+//       }
+//       if(cnt == 0){
+//          ip[i] = arg[i];
+//       }
+//       else{
+//          port[j] = arg[i];
+//          j++;
+//       }
+//    }
+//    port[j] = '\0';
+// }
 
 int main(int argc, char **argv){
 //    int sock;                        // socket descriptor
@@ -209,6 +209,43 @@ int main(int argc, char **argv){
 //   close(sock);
 //   printf("* Closing the client socket ...\n");
 //   return 0;
-int i = PACKET_SIZE;
-printf("%d \n", i);
+// int i = PACKET_SIZE;
+// printf("%d \n", i);
+
+   // struct timeval time;
+
+   // time.tv_sec = 10;
+   // time.tv_usec = 101;
+
+   // long long = 10;
+
+   // printf("%lld a %ld \n", 10, 101);
+
+   // int i = 123456 / 1000;
+   // char port[10];
+
+   // if(port[0] == '\0'){
+   //    printf("ANO \n");
+   // }
+
+   // // printf("%d \n", i);
+
+   uint8_t tcp = 16;
+   tcp |= 16;
+
+
+   uint64_t a = 1;
+   uint64_t b = 2;
+
+   uint64_t c;
+   if(a < b){
+      c = 10+a - b;
+   }
+   else{
+      c = a -b;
+   }
+
+
+   printf("TADY %lu \n", c);
+   return 0;
 }

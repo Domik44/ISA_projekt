@@ -17,7 +17,7 @@
 
 #include <time.h>
 
-#include<err.h>
+#include <err.h>
 
 #define ARG_LEN 40
 #define DEFAULT_COUNT 1024
@@ -41,6 +41,7 @@
 #define DATE_FORMAT 20
 #define MILISECONDS_LEN 7 // TODO Zmeneno aby to ukrajovalo a nezaokrouhluje to !!
 #define MILISECONDS 1000
+#define MIKROSECONDS 1000000
 #define TIME_ZONE 3
 #define TIME_LEN 50
 
@@ -55,28 +56,12 @@
 typedef struct Args{
     char fileName[ARG_LEN];
     struct sockaddr_in collector;
-    double activeTimer;
-    double inactiveTimer;
+    uint64_t activeTimer;
+    uint64_t inactiveTimer;
     int count;
     struct hostent *servent;
     int sock;
 }t_Args;
-
-/**
- * @brief Structure for storing information about headers
- * 
- */
-typedef struct FlowHeader{
-    uint16_t version;
-    uint16_t count;
-    uint32_t SysUptime; // TODO
-    uint32_t unix_secs;
-    uint32_t unix_nsecs;
-    uint32_t flow_sequence;
-    uint8_t engine_type; //TODO
-    uint8_t engine_id; // TODO
-    uint16_t sampling_interval; // TODO
-}t_FlowHeader;
 
 
 /**
@@ -86,28 +71,35 @@ typedef struct FlowHeader{
 typedef struct Flow{
     uint32_t src_IP;
     uint32_t dst_IP;
-    uint32_t next_hop;
-    uint16_t input; //TODO
-    uint16_t output; //TODO
     uint32_t dPkts;
     uint32_t dOctets;
-    char first[TIME_LEN];
-    char last[TIME_LEN];
+    uint64_t first_sys;
+    uint64_t last_sys;
     uint16_t src_port;
     uint16_t dst_port;
-    uint8_t pad1; //TODO
     uint8_t tpc_flags; // TODO
     uint8_t prot;
-    uint8_t tos; // TODO
-    uint16_t src_as; //TODO
-    uint16_t dst_as; //TODO
-    uint8_t src_mask; //TODO
-    uint8_t dst_mask; //TODO
-    uint16_t pad2; // TODO
+    uint8_t tos;
     struct Flow *next;
     struct Flow *previous;
-    struct FlowHeader *header;
 }t_Flow;
+
+typedef struct Pkt{
+    // Header
+    uint16_t version, count;
+    uint32_t SysUpTime, unix_secs, unix_nsecs, flow_seq;
+    uint8_t engine_type, engine_id;
+    uint16_t sampling_int;
+    // Flow
+    uint32_t src_ip, dst_ip, next_hop;
+    uint16_t input, output;
+    uint32_t dPkts, dOcts, First, Last;
+    uint16_t src_port, dst_port;
+    uint8_t pad1, tcp_flags, prot, tos;
+    uint16_t src_as, dst_as;
+    uint8_t src_mask, dst_mask;
+    uint16_t pad2;
+}t_Pkt;
 
 /**
  * @brief List structure for holding flows
@@ -119,19 +111,8 @@ typedef struct List{
     int counter;
 }t_List;
 
-/**
- * @brief Structure for storing date
- * 
- */
-typedef struct Date{
-    char day[DATE_FORMAT];
-    char month[DATE_FORMAT];
-    char year[DATE_FORMAT];
-    char hours[DATE_FORMAT];
-    char minutes[DATE_FORMAT];
-    char seconds[DATE_FORMAT];
-}t_Date;
 
+typedef struct timeval t_time;
 
 /**
  * @brief Constructor for argument structure
@@ -171,7 +152,7 @@ void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header
  * @param data String containing packet data
  * @param ip_header_len Length of ip header
  */
-void process_tcp(const u_char *data ,int ip_header_len, uint16_t *src_port, uint16_t *dst_port);
+void process_tcp(const u_char *data ,int ip_header_len, uint16_t *src_port, uint16_t *dst_port, uint8_t *tpc_flags);
 
 /**
  * @brief Fucntion gets important information about UDP packet
@@ -188,13 +169,11 @@ void process_udp(const u_char *data, int ip_header_len, uint16_t *src_port, uint
 void process_icmp();
 
 // Tohle bude funkce na kontrolovani timeru flow (ktere odeslat)
-void check_times();
+void check_timers();
 
-t_FlowHeader *create_header(struct timeval *secs);
+t_Flow *create_flow(uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type, uint32_t octets, uint8_t tos, uint8_t tcp_flags);
 
-void delete_header(t_FlowHeader *header);
-
-t_Flow *create_flow(uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type, char *time, uint32_t octets, struct timeval *secs, uint8_t tos);
+void update_flow(t_Flow *flow, uint32_t add_octets, uint8_t tcp_flags);
 
 void delete_flow(t_Flow *flow);
 
@@ -206,16 +185,14 @@ void list_delete(t_List *list, t_Flow *flow);
 
 t_Flow *list_find(t_List *list, uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type);
 
-t_Date split_date(char *given);
-
 double get_seconds(char *str);
 
-double get_difference(t_Date *first, t_Date *last);
-
-void send_flow(t_Args *args, t_Flow *flow, t_Date *oldest, t_Date *current);
+void send_flow(t_Args *args, t_Flow *flow, t_time *oldest, t_time *current);
 
 void create_client_sock(t_Args *args);
 
 void connect_to_sock(t_Args *args);
 
 void close_sock(t_Args *args);
+
+uint64_t get_SysUpTime(t_time *oldest, t_time *current);

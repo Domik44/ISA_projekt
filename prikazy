@@ -1,0 +1,7 @@
+ukonceni udp spojeni:
+fuser -n udp -k cislo_portu
+vytvoreni serveru:
+nfcapd -D -T all -l cesta_kam_to_hazet -I any -S2 -p port
+zobrazeni:
+nfdump -I -r cesta_k_logu
+nfdump -r cesta
