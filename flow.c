@@ -22,7 +22,7 @@ void process_tcp(const u_char *data, int ip_header_len, uint16_t *src_port, uint
     struct tcphdr *tcp_header = (struct tcphdr *)(data + ip_header_len + sizeof(struct ether_header));
     *src_port = tcp_header->source; // TODO -> odstraneno nthos protoze neni potreba ho delat?
     *dst_port = tcp_header->dest;
-    *tcp_flags |= tcp_header->th_flags;
+    *tcp_flags = tcp_header->th_flags; // TODO -> tady byl ten OR, ale byl umisten blbe
 
 }
 
@@ -89,7 +89,7 @@ void update_flow(t_Flow *flow, uint32_t add_octets, uint8_t tcp_flags){ //TODO
     flow->dPkts += 1;
     flow->dOctets += add_octets;
     flow->last_sys = get_SysUpTime(&boot_time, &current_time);
-    flow->tpc_flags = tcp_flags;
+    flow->tpc_flags |= tcp_flags;
 }
 
 void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header, const u_char *data){
