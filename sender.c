@@ -25,9 +25,19 @@ void send_flow(t_Args *args, t_Flow *flow, t_time *oldest, t_time *current){
     uint8_t packet[PACKET_SIZE];
     t_Pkt *pkt = (t_Pkt *)packet;
 
+    int round = (((flow->first_sys % 1000)/100) >=5) ? 1 : 0;
     flow->first_sys /= MILISECONDS;
+    flow->first_sys += round;
+    round = (((flow->last_sys % 1000)/100) >=5) ? 1 : 0;
     flow->last_sys /= MILISECONDS;
-    uint64_t sysup = get_SysUpTime(oldest, current)/MILISECONDS;
+    flow->last_sys += round;
+
+    uint64_t sysup = get_SysUpTime(oldest, current);
+    round = (((sysup%1000)/100) >= 5) ? 1 : 0;
+    sysup /= MILISECONDS;
+    sysup += round;
+
+    uint64_t first_seen = (current->tv_sec*1000000 + current->tv_usec) - ((sysup*1000)-flow->first_sys*1000);
 
     // HEADER
     pkt->version = htons(VERSION);

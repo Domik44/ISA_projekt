@@ -8,7 +8,7 @@
 
 // GLOBAL VARIABLES
 
-t_Args args;
+t_Args *args;
 t_List list;
 t_time boot_time;
 t_time current_time;
@@ -33,10 +33,6 @@ void process_udp(const u_char *data, int ip_header_len, uint16_t *src_port, uint
 
 }
 
-void process_icmp(){
-    // Could write any data specific for icmp
-}
-
 void check_timers(){
     t_Flow *current = list.head; 
 
@@ -50,16 +46,17 @@ void check_timers(){
             continue;
         }
 
-        if(first_diff > args.activeTimer || last_diff > args.inactiveTimer){
+        if(first_diff > args->activeTimer || last_diff > args->inactiveTimer){
             uint64_t s = get_SysUpTime(&boot_time, &current_time);
-            printf("TIMER: %lu %lu %lu \n", sysuptime, current->first_sys, current->last_sys);
-            send_flow(&args, current, &boot_time, &current_time);
+            // printf("TIMER: %lu %lu %lu \n", sysuptime, current->first_sys, current->last_sys);
+            send_flow(args, current, &boot_time, &current_time);
         }
         current = current->next;
     }
 }
 
-t_Flow *create_flow(uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type, uint32_t octets, uint8_t tos, uint8_t tcp_flags){ //TODO
+t_Flow *create_flow(uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port,
+     uint8_t type, uint32_t octets, uint8_t tos, uint8_t tcp_flags){ //TODO
     t_Flow *flow = (t_Flow*)malloc(sizeof(t_Flow)); //TODO Osetrit malloc fail!
     flow->next = NULL;
 
@@ -89,7 +86,7 @@ void update_flow(t_Flow *flow, uint32_t add_octets, uint8_t tcp_flags){ //TODO
     flow->dPkts += 1;
     flow->dOctets += add_octets;
     flow->last_sys = get_SysUpTime(&boot_time, &current_time);
-    flow->tpc_flags |= tcp_flags;
+    flow->tpc_flags |= tcp_flags;   
 }
 
 void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header, const u_char *data){
@@ -139,7 +136,6 @@ void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header
     uint8_t tcp_flags = 0;
     switch (protocol_type){ // Processing different protocol types
         case ICMP:
-            process_icmp();
             break;
         case TCP:
             process_tcp(data, ip_header_len, &src_port, &dst_port, &tcp_flags);
@@ -153,14 +149,17 @@ void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header
 
     t_Flow *flow = list_find(&list, ip_src, ip_dst, src_port, dst_port, protocol_type);
     if(!flow){ // No such flow in list
-        if(list.counter >= args.count){ // Max of flows being in list was reached
+        if(list.counter >= args->count){ // Max of flows being in list was reached
             printf("Posilal bych \n"); // TODO -> odstranit
-            send_flow(&args, list.head, &boot_time, &current_time); // Sending oldest_time flow
+            send_flow(args, list.head, &boot_time, &current_time); // Sending oldest_time flow
         }
         flow = create_flow(ip_src, ip_dst, src_port, dst_port, protocol_type, len, tos, tcp_flags);
     }
     else{ // Flow exists so we update it 
         update_flow(flow, len, tcp_flags);
+        if(tcp_flags & FIN || tcp_flags & RST){
+            send_flow(args, list.head, &boot_time, &current_time); // Sending flow on FIN or RST
+        }
     }
 }
 
@@ -168,14 +167,14 @@ int main(int argc, char **argv){
 
     args = ctor_Args();
     list = ctor_List();
-    parse_arguments(argc, argv, &args);
+    parse_arguments(argc, argv, args);
 
-    create_client_sock(&args); // TODO nejake osetreni chyb
-    connect_to_sock(&args);
+    create_client_sock(args); // TODO nejake osetreni chyb
+    connect_to_sock(args);
 
     char error_buffer[PCAP_ERRBUF_SIZE];
 
-    pcap_t *sniffer = pcap_open_offline(args.fileName, error_buffer);
+    pcap_t *sniffer = pcap_open_offline(args->fileName, error_buffer);
     if(!sniffer){
       fprintf(stderr, "Error! Could not open file! \n Error: \n\t%s \n", error_buffer);
       exit(-1);
@@ -207,13 +206,14 @@ int main(int argc, char **argv){
         tmp = current->next;
         uint64_t sysuptime = get_SysUpTime(&boot_time, &current_time);
         // printf("KONEC: %lu %lu %lu \n", sysuptime, current->first_sys, current->last_sys);
-        send_flow(&args, current, &boot_time, &current_time);
+        send_flow(args, current, &boot_time, &current_time);
         current = tmp;
     }
 
     pcap_freecode(&fp);
     pcap_close(sniffer);
 
-    close_sock(&args);
+    close_sock(args);
+    free(args);
     return 0;
 }

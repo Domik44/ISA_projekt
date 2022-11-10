@@ -246,6 +246,14 @@ int main(int argc, char **argv){
    }
 
 
-   printf("TADY %lu \n", c);
+   // printf("TADY %lu \n", c);
+
+   int numberino = 155622;
+   int pridavek = ((numberino % 1000)/100) >=5 ? 1 : 0;
+   int vysledek = numberino/1000 + pridavek;
+
+   printf("VYSLEDEK = %d \n", vysledek);
+   // printf("MODULO = %d \n", (numberino % 1000)/100);
+
    return 0;
 }

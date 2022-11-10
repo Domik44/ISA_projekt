@@ -6,18 +6,18 @@
 
 #include "flow.h"
 
-t_Args ctor_Args(){
-   t_Args args;
-   strcpy(args.fileName, "-");
-   memset(&args.collector,0,sizeof(args.collector)); // erase the server structure
-   args.collector.sin_family = AF_INET;   
-   if ((args.servent = gethostbyname(DEFAULT_COLLECTOR_IP)) == NULL) // check the first parameter
+t_Args *ctor_Args(){
+   t_Args *args = malloc(sizeof(t_Args));
+   strcpy(args->fileName, "-");
+   memset(&args->collector,0,sizeof(args->collector)); // erase the server structure
+   args->collector.sin_family = AF_INET;   
+   if ((args->servent = gethostbyname(DEFAULT_COLLECTOR_IP)) == NULL) // check the first parameter
       errx(1,"gethostbyname() failed\n");
-   memcpy(&args.collector.sin_addr,args.servent->h_addr,args.servent->h_length);
-   args.collector.sin_port = htons(DEFAULT_COLLECTOR_PORT);
-   args.count = DEFAULT_COUNT;
-   args.inactiveTimer = DEFAULT_INACTIVE*MIKROSECONDS;
-   args.activeTimer = DEFAULT_TIMER*MIKROSECONDS;
+   memcpy(&args->collector.sin_addr,args->servent->h_addr,args->servent->h_length);
+   args->collector.sin_port = htons(DEFAULT_COLLECTOR_PORT);
+   args->count = DEFAULT_COUNT;
+   args->inactiveTimer = DEFAULT_INACTIVE*MIKROSECONDS;
+   args->activeTimer = DEFAULT_TIMER*MIKROSECONDS;
 
    return args;
 }

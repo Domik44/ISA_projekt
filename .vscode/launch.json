@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/../flow",
-            "args": ["-c", "192.168.0.1:2055", "-f", "files/tcp-fin.pcap"],
+            "args": ["-c", "0.0.0.0:2056", "-f", "/home/student/Desktop/ISA_projekt/files/icmp.pcap"],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "build"
         }
