@@ -20,16 +20,16 @@ t_time current_time;
 
 void process_tcp(const u_char *data, int ip_header_len, uint16_t *src_port, uint16_t *dst_port, uint8_t *tcp_flags){
     struct tcphdr *tcp_header = (struct tcphdr *)(data + ip_header_len + sizeof(struct ether_header));
-    *src_port = tcp_header->source; // TODO -> odstraneno nthos protoze neni potreba ho delat?
-    *dst_port = tcp_header->dest;
+    *src_port = tcp_header->th_sport; // TODO -> odstraneno nthos protoze neni potreba ho delat?
+    *dst_port = tcp_header->th_dport;
     *tcp_flags = tcp_header->th_flags; // TODO -> tady byl ten OR, ale byl umisten blbe
 
 }
 
 void process_udp(const u_char *data, int ip_header_len, uint16_t *src_port, uint16_t *dst_port){
     struct udphdr *udp_header = (struct udphdr *)(data + ip_header_len + sizeof(struct ether_header));
-    *src_port = udp_header->source;
-    *dst_port = udp_header->dest;
+    *src_port = udp_header->uh_sport;
+    *dst_port = udp_header->uh_dport;
 
 }
 
@@ -154,6 +154,9 @@ void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header
             send_flow(args, list.head, &boot_time, &current_time); // Sending oldest_time flow
         }
         flow = create_flow(ip_src, ip_dst, src_port, dst_port, protocol_type, len, tos, tcp_flags);
+        if(tcp_flags & FIN || tcp_flags & RST){
+            send_flow(args, list.head, &boot_time, &current_time); // Sending flow on FIN or RST
+        }
     }
     else{ // Flow exists so we update it 
         update_flow(flow, len, tcp_flags);
