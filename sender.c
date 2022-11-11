@@ -37,7 +37,7 @@ void send_flow(t_Args *args, t_Flow *flow, t_time *oldest, t_time *current){
     sysup /= MILISECONDS;
     sysup += round;
 
-    uint64_t first_seen = (current->tv_sec*1000000 + current->tv_usec) - ((sysup*1000)-flow->first_sys*1000);
+    // uint64_t first_seen = (current->tv_sec*1000000 + current->tv_usec) - ((sysup*1000)-flow->first_sys*1000);
 
     // HEADER
     pkt->version = htons(VERSION);
@@ -72,6 +72,9 @@ void send_flow(t_Args *args, t_Flow *flow, t_time *oldest, t_time *current){
     pkt->pad2 = 0;
 
     int i = send(args->sock,packet,PACKET_SIZE,0); // TODO -> posledni polozka flags
+    if(i == -1){
+        err(1, "sendto()");
+    }
 
     delete_flow(flow);
     flows_exported++;

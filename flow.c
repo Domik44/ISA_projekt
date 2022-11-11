@@ -47,7 +47,7 @@ void check_timers(){
         }
 
         if(first_diff > args->activeTimer || last_diff > args->inactiveTimer){
-            uint64_t s = get_SysUpTime(&boot_time, &current_time);
+            // uint64_t s = get_SysUpTime(&boot_time, &current_time);
             // printf("TIMER: %lu %lu %lu \n", sysuptime, current->first_sys, current->last_sys);
             send_flow(args, current, &boot_time, &current_time);
         }
@@ -204,7 +204,7 @@ int main(int argc, char **argv){
     while (current)
     {
         tmp = current->next;
-        uint64_t sysuptime = get_SysUpTime(&boot_time, &current_time);
+        // uint64_t sysuptime = get_SysUpTime(&boot_time, &current_time);
         // printf("KONEC: %lu %lu %lu \n", sysuptime, current->first_sys, current->last_sys);
         send_flow(args, current, &boot_time, &current_time);
         current = tmp;
