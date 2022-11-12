@@ -8,16 +8,23 @@
 
 t_Args *ctor_Args(){
    t_Args *args = malloc(sizeof(t_Args));
+   if(!args){
+      errx(1,"malloc failed\n");
+   }
+   // Filename
    strcpy(args->fileName, "-");
-   memset(&args->collector,0,sizeof(args->collector)); // erase the server structure
+   // Collector
+   memset(&args->collector,0,sizeof(args->collector));
    args->collector.sin_family = AF_INET;   
-   if ((args->servent = gethostbyname(DEFAULT_COLLECTOR_IP)) == NULL) // check the first parameter
+   if ((args->servent = gethostbyname(DEFAULT_COLLECTOR_IP)) == NULL){
+      free(args);
       errx(1,"gethostbyname() failed\n");
+   }
    memcpy(&args->collector.sin_addr,args->servent->h_addr,args->servent->h_length);
    args->collector.sin_port = htons(DEFAULT_COLLECTOR_PORT);
    args->count = DEFAULT_COUNT;
    args->inactiveTimer = DEFAULT_INACTIVE*MIKROSECONDS;
-   args->activeTimer = DEFAULT_TIMER*MIKROSECONDS;
+   args->activeTimer = DEFAULT_ACTIVE*MIKROSECONDS;
 
    return args;
 }
@@ -88,10 +95,10 @@ void parse_arguments(int argc, char **argv, t_Args *args){
          case 'h':
             help_function();
             break;
-         case ':': // TODO
+         case ':':
             errx(1,"Option \"%c\" needs a value!\n", optopt);
             break;
-         case '?': // TODO
+         case '?':
             errx(1,"Invalid option \"%c\"!\n", optopt);
             break;
       }

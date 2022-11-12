@@ -1,0 +1,39 @@
+.TH FLOW 1 2020-02-16 GNU
+
+.SH NAME
+flow \- NetFlow exporter
+
+.SH SYNOPSIS
+.B flow
+[\fB\-f\fR \fI<file>\fR]
+[\fB\-c\fR \fI<netflow_collector>\fR[\fB\::\fR\fI<port>\fR]\fR]
+[\fB\-a\fR \fI<active_timer>\fR]
+[\fB\-i\fR \fI<inactive_timer>\fR]
+[\fB\-m\fR \fI<count>\fR]
+[\fB\-h\fR]
+
+.SH DESCRIPTION
+.B flow
+takes packets from input and groups them into flows. These flows are later exported to collector. Exporting is based on timers/flags/flow-cache. Exports one flow per packet.
+
+.SH OPTIONS
+.TP
+.BR \-f " "  \fI<file>
+Name of analyzed file or STDIN.
+.TP
+.BR \-c " " \fI<netflow_collector>[:<port>]
+IP address or hostname of NetFlow connector. Additionaly UDP port number.
+.TP
+.BR \-a " " \fI<active_timer>
+Interval in seconds. All active records are exported to collector after this timer
+.TP
+.BR \-i " " \fI<inactive_timer>
+Interval in seconds. All inactive records are exported to collector after this timer.
+.TP
+.BR \-m " " \fI<count>
+Size of flow-cache (maximum flows in cache).
+.TP
+.BR \-h
+Prints help information.
+
+.SH FILES

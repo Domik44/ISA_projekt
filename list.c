@@ -2,7 +2,7 @@
 // Login: xpopdo00, <xpopdo00@stud.fit.vutbr.cz>
 // VUT FIT, 3 BIT, winter semestr
 // Date: 13.10.2022
-// File containing functions for list
+// File containing functions for list operations
 
 #include "flow.h"
 

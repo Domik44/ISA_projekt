@@ -20,4 +20,4 @@ run:
 	sudo ./$(NAME)
 
 zip:
-	zip $(LOGIN).zip  $(FILES) Makefile Readme.md
+	zip $(LOGIN).zip  $(FILES) Makefile flow.1 manual.pdf

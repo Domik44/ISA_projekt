@@ -2,7 +2,7 @@
 // Login: xpopdo00, <xpopdo00@stud.fit.vutbr.cz>
 // VUT FIT, 3 BIT, winter semestr
 // Date: 12.10.2022
-// Header file for flow.c
+// Header file for flow.c and all his modules
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,44 +15,41 @@
 #define __FAVOR_BSD
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
-
-
 #include <netdb.h>
-
 #include <time.h>
-
 #include <err.h>
 
-#define ARG_LEN 1000
+#define ARG_LEN 4097 // Max len of filepath + zero sign
 #define DEFAULT_COUNT 1024
 #define DEFAULT_INACTIVE 10
-#define DEFAULT_TIMER 60
+#define DEFAULT_ACTIVE 60
 #define DEFAULT_COLLECTOR_IP "127.0.0.1"
 #define DEFAULT_COLLECTOR_PORT 2055
 #define FILTER "udp or tcp or icmp"
 #define FILTER_LEN 30
 #define NUMBER_PACKETS 0
-#define IP_LEN 2048 // Max len of url
+#define IP_LEN 2049 // Max len of url + zero sign
 #define PORT_LEN 6
 
+// Protocol numbers
 #define ICMP 1
 #define TCP 6
 #define UDP 17
 
+// NetFlow parametres
 #define VERSION 5
 #define COUNT 1
 
-#define DATE_FORMAT 20
-#define MILISECONDS_LEN 7
+// Second formats
 #define MILISECONDS 1000
 #define MIKROSECONDS 1000000
-#define TIME_ZONE 3
-#define TIME_LEN 50
 
+// Packet sizes
 #define HEADER_SIZE 24
 #define FLOW_SIZE 48
 #define PACKET_SIZE HEADER_SIZE + FLOW_SIZE // -> 72 (We are sending one flow per packet)
 
+// TCP flags
 #define FIN 1
 #define RST 4
 
@@ -70,7 +67,6 @@ typedef struct Args{
     int sock;
 }t_Args;
 
-
 /**
  * @brief Structure for storing information about flow
  * 
@@ -84,13 +80,17 @@ typedef struct Flow{
     uint64_t last_sys;
     uint16_t src_port;
     uint16_t dst_port;
-    uint8_t tpc_flags; // TODO
+    uint8_t tpc_flags;
     uint8_t prot;
     uint8_t tos;
     struct Flow *next;
     struct Flow *previous;
 }t_Flow;
 
+/**
+ * @brief Structure for storing information about packet sending flow
+ * 
+ */
 typedef struct Pkt{
     // Header
     uint16_t version, count;
@@ -121,6 +121,8 @@ typedef struct List{
 
 typedef struct timeval t_time;
 
+//------------------- arguments.c ------------------- //
+
 /**
  * @brief Constructor for argument structure
  * 
@@ -135,6 +137,15 @@ t_Args *ctor_Args();
 void help_function();
 
 /**
+ * @brief Function splits input collector into ip address and port number
+ * 
+ * @param arg Argument to be splitted
+ * @param ip String to store ip address to
+ * @param port String to store port number to
+ */
+void split_arg(char *arg, char *ip, char *port);
+
+/**
  * @brief Function for parsing and storing arguments
  * 
  * @param argc Number of input arguments
@@ -142,6 +153,7 @@ void help_function();
  */
 void parse_arguments(int argc, char **argv, t_Args *args);
 
+//------------------- flow.c ------------------- //
 
 /**
  * @brief Callback function used for handling recieved packets
@@ -150,7 +162,7 @@ void parse_arguments(int argc, char **argv, t_Args *args);
  * @param packet_header Packet header storing packet information
  * @param data String containing packet data
  */
-void sniffer_callback(u_char *arguments, const struct pcap_pkthdr *packet_header, const u_char *data);
+void callback(u_char *arguments, const struct pcap_pkthdr *packet_header, const u_char *data);
 
 /**
  * @brief Fucntion gets important information about TCP packet
@@ -199,11 +211,13 @@ t_Flow *create_flow(uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_
 void update_flow(t_Flow *flow, uint32_t add_octets, uint8_t tcp_flags);
 
 /**
- * @brief Updates flow information
+ * @brief Deletes flow
  * 
  * @param flow Flow to be deleted
  */
 void delete_flow(t_Flow *flow);
+
+//------------------- list.c ------------------- //
 
 /**
  * @brief Creator for list.
@@ -240,13 +254,7 @@ void list_delete(t_List *list, t_Flow *flow);
  */
 t_Flow *list_find(t_List *list, uint32_t src_ip, uint32_t dst_ip, uint16_t src_port, uint16_t dst_port, uint8_t type);
 
-/**
- * @brief Deletes flow from the list.
- * 
- * @param list List of flows
- * @param flow Flow to be deleted
- */
-double get_seconds(char *str);
+//------------------- sender.c ------------------- //
 
 /**
  * @brief Sends flow to the collector.
@@ -260,27 +268,30 @@ void send_flow(t_Args *args, t_Flow *flow, t_time *oldest, t_time *current);
 /**
  * @brief Creates socket for client.
  * 
- * @param list Input arguments
+ * @param args Input arguments
  */
 void create_client_sock(t_Args *args);
 
 /**
  * @brief Connects to socket.
  * 
- * @param list Input arguments
+ * @param args Input arguments
  */
 void connect_to_sock(t_Args *args);
 
 /**
  * @brief Closes to socket.
  * 
- * @param list Input arguments
+ * @param args Input arguments
  */
 void close_sock(t_Args *args);
+
+//------------------- time.c ------------------- //
 
 /**
  * @brief Gets sysup time, which is interval from boot time to current time.
  * 
- * @param list Input arguments
+ * @param oldest Epoch time in boot
+ * @param current Epoch time of currently processed packet
  */
 uint64_t get_SysUpTime(t_time *oldest, t_time *current);
