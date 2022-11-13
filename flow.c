@@ -223,6 +223,7 @@ int main(int argc, char **argv){
         current = tmp;
     }
 
+    // Freeing memory
     pcap_freecode(&fp);
     pcap_close(sniffer);
 
