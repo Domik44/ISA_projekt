@@ -16,8 +16,5 @@ $(NAME): $(FILES)
 clean:
 	rm -f *.o $(NAME)
 
-run:
-	sudo ./$(NAME)
-
 zip:
 	zip $(LOGIN).zip  $(FILES) Makefile flow.1 manual.pdf
